@@ -3,7 +3,6 @@ import re
 import requests
 import traceback
 from importlib import resources
-import swebench.resources
 from minisweagent.agents.tree_search_node import TreeSearchNode
 from argparse import ArgumentTypeError
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -577,9 +576,9 @@ def load_cached_environment_yml(instance_id: str) -> str:
         return None
     try:
         return (
-            resources.files(swebench.resources)
+            resources.files("swebench.resources")
             .joinpath(f"swebench-og/{repo}/{number}/environment.yml")
             .read_text()
         )
-    except FileNotFoundError:
+    except (FileNotFoundError, ModuleNotFoundError):
         return None
