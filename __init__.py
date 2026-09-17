@@ -51,18 +51,3 @@ from swebench.harness.utils import (
     run_threadpool,
 )
 
-from swebench.versioning.constants import (
-    MAP_REPO_TO_VERSION_PATHS,
-    MAP_REPO_TO_VERSION_PATTERNS,
-)
-
-from swebench.versioning.get_versions import (
-    get_version,
-    get_versions_from_build,
-    get_versions_from_web,
-    map_version_to_task_instances,
-)
-
-from swebench.versioning.utils import (
-    split_instances,
-)
