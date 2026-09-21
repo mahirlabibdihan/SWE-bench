@@ -70,10 +70,14 @@ GIT_APPLY_CMDS = [
 ]
 
 
-def _set_node_pass_flag(node: dict, node_id: str, passed: bool) -> bool:
-    """Recursively find a node by id and set its pass flag."""
+def _set_node_pass_flag(node: dict, node_id: str, passed: bool | None) -> bool:
+    """Recursively find a node by id and set its pass flag.
+
+    A passed value of None clears the flag so the node is re-evaluated on the
+    next run (used when evaluation errored out rather than genuinely failing).
+    """
     if node.get("id") == node_id and node.get("is_terminating", False):
-        node["pass"] = bool(passed)
+        node["pass"] = None if passed is None else bool(passed)
         return True
 
     for child in node.get("children", []) or []:
@@ -82,7 +86,7 @@ def _set_node_pass_flag(node: dict, node_id: str, passed: bool) -> bool:
     return False
 
 
-def _update_tree_nodes_passes(preds: list[dict], pass_by_node_id: dict[str, bool]) -> None:
+def _update_tree_nodes_passes(preds: list[dict], pass_by_node_id: dict[str, bool | None]) -> None:
     """Write pass/fail flags to each source tree JSON once, after candidate evaluation."""
     preds_by_tree_file: dict[str, list[dict]] = {}
     for pred in preds:
@@ -354,7 +358,7 @@ def run_instance_candidates(
     """
     any_completed = False
     any_resolved = False
-    pass_by_node_id: dict[str, bool] = {}
+    pass_by_node_id: dict[str, bool | None] = {}
 
     for pred in preds:
         pred_pass = pred.get("pass")
@@ -394,7 +398,10 @@ def run_instance_candidates(
         )
         node_id = pred.get("node_id")
         if node_id:
-            pass_by_node_id[node_id] = bool(result["resolved"])
+            # Only a completed evaluation yields a verdict. An errored candidate
+            # (patch apply failure, timeout, container/build error) is not a
+            # failure, so clear any flag and let the next run pick it up again.
+            pass_by_node_id[node_id] = bool(result["resolved"]) if result["completed"] else None
 
         any_completed = any_completed or result["completed"]
         any_resolved = any_resolved or result["resolved"]
